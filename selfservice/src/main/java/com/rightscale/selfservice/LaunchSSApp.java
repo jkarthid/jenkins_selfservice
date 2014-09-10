@@ -32,13 +32,13 @@ import java.io.IOException;
  *
  * @author Kohsuke Kawaguchi
  */
-public class HelloWorldBuilder extends Builder {
+public class LaunchSSApp extends Builder {
 
     private final String name;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public HelloWorldBuilder(String name) {
+    public LaunchSSApp(String name) {
         this.name = name;
     }
 
