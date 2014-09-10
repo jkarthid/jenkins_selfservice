@@ -12,15 +12,15 @@
     so it should be straightforward to find them.
   -->
   <f:section title="Self Service">
-    <f:entry title="Self Service User" field="SelfServiceUser"
+    <f:entry title="Self Service User" field="selfserviceUser"
       description="Please Enter Your RightScale User" help="...">
       <f:textbox />
     </f:entry>
-    <f:entry title="Self Service Password" field="SelfServicePassword"
+    <f:entry title="Self Service Password" field="selfservicePassword"
       description="Please Enter Your RightScale password" help="...">
       <f:password />
     </f:entry>
-    <f:entry title="RightScale Shard" field="SelfServiceShard"
+    <f:entry title="RightScale Shard" field="selfserviceShard"
         description="Please enter your rightscale shard" help="...">
       <f:textbox />
     </f:entry>

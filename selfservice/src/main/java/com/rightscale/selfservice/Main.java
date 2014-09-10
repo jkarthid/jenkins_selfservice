@@ -14,6 +14,12 @@ import org.kohsuke.stapler.QueryParameter;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
+import java.net.URI;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.UriBuilder;
+
+import org.glassfish.jersey.client.*;
 
 /**
  * Sample {@link Builder}.
@@ -21,7 +27,7 @@ import java.io.IOException;
  * <p>
  * When the user configures the project and enables this builder,
  * {@link DescriptorImpl#newInstance(StaplerRequest)} is invoked
- * and a new {@link HelloWorldBuilder} is created. The created
+ * and a new {@link Main} is created. The created
  * instance is persisted to the project configuration XML by using
  * XStream, so this allows you to use instance fields (like {@link #name})
  * to remember the configuration.
@@ -32,13 +38,13 @@ import java.io.IOException;
  *
  * @author Kohsuke Kawaguchi
  */
-public class LaunchSSApp extends Builder {
+public class Main extends Builder {
 
     private final String name;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
-    public LaunchSSApp(String name) {
+    public Main(String name) {
         this.name = name;
     }
 
@@ -55,10 +61,15 @@ public class LaunchSSApp extends Builder {
         // Since this is a dummy, we just say 'hello world' and call that a build.
 
         // This also shows how you can consult the global configuration of the builder
-        if (getDescriptor().getUseFrench())
-            listener.getLogger().println("Bonjour, "+name+"!");
-        else
-            listener.getLogger().println("Hello, "+name+"!");
+        /**
+         * if (getDescriptor().getUseFrench())
+         *  listener.getLogger().println("Bonjour, "+name+"!");
+         * else
+         * listener.getLogger().println("Hello, "+name+"!");
+         * */
+        listener.getLogger().println("User: " + getDescriptor().getSelfServiceUser());
+        listener.getLogger().println("Password: " + getDescriptor().getSelfServicePassword());
+        listener.getLogger().println("Shard: " + getDescriptor().getSelfServiceShard());
         return true;
     }
 
@@ -71,11 +82,11 @@ public class LaunchSSApp extends Builder {
     }
 
     /**
-     * Descriptor for {@link HelloWorldBuilder}. Used as a singleton.
+     * Descriptor for {@link Main}. Used as a singleton.
      * The class is marked as public so that it can be accessed from views.
      *
      * <p>
-     * See <tt>src/main/resources/hudson/plugins/hello_world/HelloWorldBuilder/*.jelly</tt>
+     * See <tt>src/main/resources/hudson/plugins/hello_world/Main/*.jelly</tt>
      * for the actual HTML fragment for the configuration screen.
      */
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
@@ -87,7 +98,10 @@ public class LaunchSSApp extends Builder {
          * <p>
          * If you don't want fields to be persisted, use <tt>transient</tt>.
          */
-        private boolean useFrench;
+        private boolean debug;
+        private String selfserviceUser;
+        private String selfservicePassword;
+        private String selfserviceShard;
 
         /**
          * Performs on-the-fly validation of the form field 'name'.
@@ -122,7 +136,9 @@ public class LaunchSSApp extends Builder {
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             // To persist global configuration information,
             // set that to properties and call save().
-            useFrench = formData.getBoolean("useFrench");
+            selfserviceUser=formData.getString("selfserviceUser");
+            selfservicePassword=formData.getString("selfservicePassword");
+            selfserviceShard=formData.getString("selfserviceShard");
             // ^Can also use req.bindJSON(this, formData);
             //  (easier when there are many fields; need set* methods for this, like setUseFrench)
             save();
@@ -134,9 +150,20 @@ public class LaunchSSApp extends Builder {
          *
          * The method name is bit awkward because global.jelly calls this method to determine
          * the initial state of the checkbox by the naming convention.
-         */
-        public boolean getUseFrench() {
-            return useFrench;
+         
+         * public boolean getUseFrench() {
+         *    return useFrench;
+         *  }
+         * 
+         * */
+        public String getSelfServiceUser(){
+            return selfserviceUser;
+        }
+        public String getSelfServicePassword(){
+            return selfservicePassword;
+        }
+        public String getSelfServiceShard(){
+            return selfserviceShard;
         }
     }
 }
