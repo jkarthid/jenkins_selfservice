@@ -11,7 +11,7 @@
     tags they use. Views are always organized according to its owner class,
     so it should be straightforward to find them.
   -->
-  <f:section title="Self Service">
+  <f:section title="RightScale Self Service">
     <f:entry title="Self Service User" field="selfserviceUser"
       description="Please Enter Your RightScale User" help="...">
       <f:textbox />
@@ -24,5 +24,15 @@
         description="Please enter your rightscale shard" help="...">
       <f:textbox />
     </f:entry>
+    <f:entry title="Account Number" field="selfserviceAccount"
+             description="RightScale Account Number" help="...">
+      <f:textbox />
+    </f:entry>
+    <f:entry title="Debug Mode" field="debugMode"
+             description= "Enable Debug Mode" >
+       <f:checkbox />
+    </f:entry>
+    <f:validateButton title="Test Connectio}" progress="${%Testing...}"
+            method="doTestConnection" with="user,pass" />
   </f:section>
 </j:jelly>

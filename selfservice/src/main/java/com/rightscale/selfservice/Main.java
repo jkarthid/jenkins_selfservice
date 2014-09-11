@@ -7,19 +7,32 @@ import hudson.model.BuildListener;
 import hudson.model.AbstractProject;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
+import hudson.model.Descriptor;
+import jenkins.model.GlobalConfiguration;
+import jenkins.model.GlobalPluginConfiguration;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.QueryParameter;
-
 import javax.servlet.ServletException;
 import java.io.IOException;
 import java.net.URI;
-
+//Jersey
+import org.glassfish.jersey.client.ClientConfig;
+import org.glassfish.jersey.client.ClientResponse;
+import org.glassfish.jersey.filter.LoggingFilter;
+//javax
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.Cookie;
+import javax.ws.rs.core.NewCookie;
+import javax.ws.rs.core.UriBuilder;
+//std libs
+import java.util.List;
 
-import org.glassfish.jersey.client.*;
 
 /**
  * Sample {@link Builder}.
@@ -41,6 +54,8 @@ import org.glassfish.jersey.client.*;
 public class Main extends Builder {
 
     private final String name;
+    public static Client client;
+    public static List<NewCookie> cookies;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
     @DataBoundConstructor
@@ -50,11 +65,26 @@ public class Main extends Builder {
 
     /**
      * We'll use this from the <tt>config.jelly</tt>.
+   * @return 
      */
     public String getName() {
         return name;
     }
-
+    
+    public static URI build_uri(String ssUser,String ssPassword, String ssShard, String ssAccount){
+      ClientConfig config = new ClientConfig();
+      Client client = ClientBuilder.newClient(config);
+      UriBuilder builder = UriBuilder.fromPath("https://my.rightscale.com");
+      builder.path("/api/session");
+      builder.queryParam("email", ssUser);
+      builder.queryParam("password", ssPassword);
+      builder.queryParam("account_href", ssAccount);
+      //WebTarget webTarget = client.target("https://my.rightscale.com/api/session");
+      URI uri = builder.build();
+      return uri;
+    }
+    
+    
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
         // This is where you 'build' the project.
@@ -67,9 +97,15 @@ public class Main extends Builder {
          * else
          * listener.getLogger().println("Hello, "+name+"!");
          * */
-        listener.getLogger().println("User: " + getDescriptor().getSelfServiceUser());
-        listener.getLogger().println("Password: " + getDescriptor().getSelfServicePassword());
-        listener.getLogger().println("Shard: " + getDescriptor().getSelfServiceShard());
+        String ssUser = getDescriptor().getSelfServiceUser();
+        String ssPassword = getDescriptor().getSelfServicePassword();
+        String ssShard = getDescriptor().getSelfServiceShard();
+        String ssAccount = getDescriptor().getSelfServiceAccount();
+        listener.getLogger().println("User: " + ssUser);
+        listener.getLogger().println("Password: " + ssPassword);
+        listener.getLogger().println("Shard: " + ssShard);
+        listener.getLogger().println("Account: " + ssAccount);
+        listener.getLogger().println("URI: " + build_uri(ssUser,ssPassword,ssShard,ssAccount).toString());
         return true;
     }
 
@@ -90,6 +126,19 @@ public class Main extends Builder {
      * for the actual HTML fragment for the configuration screen.
      */
     @Extension // This indicates to Jenkins that this is an implementation of an extension point.
+    public static final class XGlobalConfiguration extends GlobalConfiguration
+    {
+        public FormValidation doTestConnection(@QueryParameter String selfserviceUser,
+                                               @QueryParameter String selfservicePassword,
+                                               @QueryParameter String selfserviceShard,
+                                               @QueryParameter String selfserviceAccount
+        ) throws IOException, ServletException {
+          if (selfserviceUser.length() == 0)
+             return FormValidation.error("Self Service User is blank");
+          return FormValidation.ok();                     
+        }
+    }
+    @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
         /**
          * To persist global configuration information,
@@ -98,10 +147,11 @@ public class Main extends Builder {
          * <p>
          * If you don't want fields to be persisted, use <tt>transient</tt>.
          */
-        private boolean debug;
+        private boolean debugMode;
         private String selfserviceUser;
         private String selfservicePassword;
         private String selfserviceShard;
+        private String selfserviceAccount;
 
         /**
          * Performs on-the-fly validation of the form field 'name'.
@@ -110,6 +160,8 @@ public class Main extends Builder {
          *      This parameter receives the value that the user has typed.
          * @return
          *      Indicates the outcome of the validation. This is sent to the browser.
+       * @throws java.io.IOException
+       * @throws javax.servlet.ServletException
          */
         public FormValidation doCheckName(@QueryParameter String value)
                 throws IOException, ServletException {
@@ -119,7 +171,8 @@ public class Main extends Builder {
                 return FormValidation.warning("Isn't the name too short?");
             return FormValidation.ok();
         }
-
+        
+        @Override
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
             // Indicates that this builder can be used with all kinds of project types 
             return true;
@@ -127,7 +180,9 @@ public class Main extends Builder {
 
         /**
          * This human readable name is used in the configuration screen.
+       * @return 
          */
+        @Override
         public String getDisplayName() {
             return "Launch Self Service App";
         }
@@ -139,6 +194,8 @@ public class Main extends Builder {
             selfserviceUser=formData.getString("selfserviceUser");
             selfservicePassword=formData.getString("selfservicePassword");
             selfserviceShard=formData.getString("selfserviceShard");
+            selfserviceAccount=formData.getString("selfserviceAccount");
+            debugMode=formData.getBoolean("debugMode");
             // ^Can also use req.bindJSON(this, formData);
             //  (easier when there are many fields; need set* methods for this, like setUseFrench)
             save();
@@ -155,7 +212,8 @@ public class Main extends Builder {
          *    return useFrench;
          *  }
          * 
-         * */
+         *
+       * @return  */
         public String getSelfServiceUser(){
             return selfserviceUser;
         }
@@ -164,6 +222,12 @@ public class Main extends Builder {
         }
         public String getSelfServiceShard(){
             return selfserviceShard;
+        }
+        public String getSelfServiceAccount(){
+            return selfserviceAccount;
+        }
+        public boolean getDebugMode(){
+            return debugMode;
         }
     }
 }
