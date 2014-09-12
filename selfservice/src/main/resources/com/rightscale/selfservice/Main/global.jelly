@@ -32,7 +32,9 @@
              description= "Enable Debug Mode" >
        <f:checkbox />
     </f:entry>
+    <!--
     <f:validateButton title="Test Connectio}" progress="${%Testing...}"
-            method="doTestConnection" with="user,pass" />
+            method="doTestConnection" with="user,pass" /> -->
+
   </f:section>
 </j:jelly>

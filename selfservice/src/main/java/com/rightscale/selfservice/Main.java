@@ -55,6 +55,7 @@ public class Main extends Builder {
 
     private final String name;
     public static Client client;
+    public static URI uri;
     public static List<NewCookie> cookies;
 
     // Fields in config.jelly must match the parameter names in the "DataBoundConstructor"
@@ -72,18 +73,20 @@ public class Main extends Builder {
     }
     
     public static URI build_uri(String ssUser,String ssPassword, String ssShard, String ssAccount){
-      ClientConfig config = new ClientConfig();
-      Client client = ClientBuilder.newClient(config);
       UriBuilder builder = UriBuilder.fromPath("https://my.rightscale.com");
       builder.path("/api/session");
       builder.queryParam("email", ssUser);
       builder.queryParam("password", ssPassword);
       builder.queryParam("account_href", ssAccount);
       //WebTarget webTarget = client.target("https://my.rightscale.com/api/session");
-      URI uri = builder.build();
+      uri = builder.build();
       return uri;
     }
-    
+    public static void login(){
+      ClientConfig config = new ClientConfig();
+      client = ClientBuilder.newClient(config);
+      
+    }
     
     @Override
     public boolean perform(AbstractBuild build, Launcher launcher, BuildListener listener) {
@@ -125,19 +128,6 @@ public class Main extends Builder {
      * See <tt>src/main/resources/hudson/plugins/hello_world/Main/*.jelly</tt>
      * for the actual HTML fragment for the configuration screen.
      */
-    @Extension // This indicates to Jenkins that this is an implementation of an extension point.
-    public static final class XGlobalConfiguration extends GlobalConfiguration
-    {
-        public FormValidation doTestConnection(@QueryParameter String selfserviceUser,
-                                               @QueryParameter String selfservicePassword,
-                                               @QueryParameter String selfserviceShard,
-                                               @QueryParameter String selfserviceAccount
-        ) throws IOException, ServletException {
-          if (selfserviceUser.length() == 0)
-             return FormValidation.error("Self Service User is blank");
-          return FormValidation.ok();                     
-        }
-    }
     @Extension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
         /**
@@ -171,6 +161,17 @@ public class Main extends Builder {
                 return FormValidation.warning("Isn't the name too short?");
             return FormValidation.ok();
         }
+        /**
+        public FormValidation doTestConnection(@QueryParameter String selfserviceUser,
+                                               @QueryParameter String selfservicePassword,
+                                               @QueryParameter String selfserviceShard,
+                                               @QueryParameter String selfserviceAccount
+        ) throws IOException, ServletException {
+          if (selfserviceUser.length() == 0)
+             return FormValidation.error("Self Service User is blank");
+          return FormValidation.ok();                     
+        }
+        * */
         
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
@@ -212,8 +213,8 @@ public class Main extends Builder {
          *    return useFrench;
          *  }
          * 
-         *
-       * @return  */
+         **/
+        
         public String getSelfServiceUser(){
             return selfserviceUser;
         }
